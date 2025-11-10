@@ -1,4 +1,5 @@
 const db = require("../db");
+const crypto = require("crypto");
 const { calculateScore } = require("../utils/scoreCalculator");
 
 // GET /drops - List active drops for users
@@ -53,5 +54,81 @@ exports.joinWaitlist = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
+  }
+};
+
+// POST /drops/:id/claim - Attempt to claim an item
+exports.claimDrop = async (req, res) => {
+  const userId = req.user.id;
+  const dropId = req.params.id;
+
+  // Use a dedicated client from the pool for transactions
+  const client = await db.pool.connect();
+
+  try {
+    // 1. Start Transaction
+    await client.query("BEGIN");
+
+    // 2. LOCK the drop row for update.
+    // This makes other claim requests wait right here until we finish.
+    const dropRes = await client.query("SELECT * FROM drops WHERE id = $1 FOR UPDATE", [dropId]);
+
+    if (dropRes.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Drop not found" });
+    }
+    const drop = dropRes.rows[0];
+
+    // 3. Checks: Is it active? Is there stock?
+    if (drop.status !== "active") {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ error: "Drop is not active for claiming" });
+    }
+    if (drop.stock_count < 1) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({ error: "Sold Out" }); // 409 Conflict is good for sold out
+    }
+
+    // 4. Verify User is in Waitlist (Optional but good for fairness)
+    // You could also check if they have a high enough score here if you wanted.
+    const wlCheck = await client.query("SELECT * FROM waitlist WHERE user_id = $1 AND drop_id = $2", [userId, dropId]);
+    if (wlCheck.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(403).json({ error: "You must join the waitlist first" });
+    }
+
+    // 5. Check if already claimed (Idempotency)
+    const claimCheck = await client.query("SELECT id FROM claims WHERE user_id = $1 AND drop_id = $2", [userId, dropId]);
+    if (claimCheck.rows.length > 0) {
+      await client.query("ROLLBACK");
+      // Return 200 with existing code is a good idempotency pattern,
+      // or 409 if you want to be strict. Let's return their existing code.
+      return res.status(200).json({
+        message: "Already claimed",
+        claim_code: claimCheck.rows[0].claim_code,
+      });
+    }
+
+    // 6. EVERYTHING OK -> PROCESS CLAIM
+    // a) Decrement Stock
+    await client.query("UPDATE drops SET stock_count = stock_count - 1 WHERE id = $1", [dropId]);
+
+    // b) Generate Claim Code & Insert Record
+    const claimCode = crypto.randomBytes(8).toString("hex").toUpperCase();
+    await client.query("INSERT INTO claims (user_id, drop_id, claim_code) VALUES ($1, $2, $3)", [userId, dropId, claimCode]);
+
+    // 7. Commit Transaction
+    await client.query("COMMIT");
+
+    res.status(201).json({
+      message: "SUCCESS! Item claimed.",
+      claim_code: claimCode,
+    });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("Claim Error:", err);
+    res.status(500).json({ error: "Transaction failed" });
+  } finally {
+    client.release(); // VERY IMPORTANT: Release client back to pool
   }
 };

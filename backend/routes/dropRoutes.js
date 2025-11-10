@@ -8,5 +8,6 @@ router.get("/", dropController.getPublicDrops);
 
 // Protected: join waitlist (needs login token)
 router.post("/:id/join", verifyToken, dropController.joinWaitlist);
+router.post("/:id/claim", verifyToken, dropController.claimDrop);
 
 module.exports = router;
