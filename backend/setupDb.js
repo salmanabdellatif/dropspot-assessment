@@ -43,6 +43,19 @@ async function setup() {
 `);
     console.log("Waitlist table ready.");
 
+    // 4. Claims Table
+    await db.query(`
+    CREATE TABLE IF NOT EXISTS claims (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id),
+        drop_id INTEGER REFERENCES drops(id),
+        claim_code VARCHAR(50) UNIQUE NOT NULL,
+        claimed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, drop_id) -- Vital for idempotency
+    );
+`);
+    console.log("Claims table ready.");
+
     console.log("Database setup complete!");
     process.exit(0);
   } catch (err) {
