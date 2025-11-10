@@ -31,6 +31,18 @@ async function setup() {
         `);
     console.log("Drops table ready.");
 
+    // 3. Waitlist Table
+    await db.query(`
+    CREATE TABLE IF NOT EXISTS waitlist (
+        user_id INTEGER REFERENCES users(id),
+        drop_id INTEGER REFERENCES drops(id) ON DELETE CASCADE,
+        joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        score INTEGER DEFAULT 0,
+        PRIMARY KEY (user_id, drop_id)
+    );
+`);
+    console.log("Waitlist table ready.");
+
     console.log("Database setup complete!");
     process.exit(0);
   } catch (err) {

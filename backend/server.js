@@ -5,6 +5,7 @@ require("dotenv").config();
 const db = require("./db");
 const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes");
+const dropRoutes = require("./routes/dropRoutes");
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.use(express.json());
 // Routes
 app.use("/auth", authRoutes);
 app.use("/admin", adminRoutes);
+app.use("/drops", dropRoutes);
 
 // Health Check Route
 app.get("/", async (req, res) => {
@@ -29,5 +31,5 @@ app.get("/", async (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
