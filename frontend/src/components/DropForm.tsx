@@ -1,7 +1,9 @@
 "use client";
 import { useState } from "react";
 import { Drop } from "@/types";
-import { Loader2 } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
+import toast from "react-hot-toast";
+import { aiService } from "@/services/aiService";
 
 interface DropFormProps {
   initialData?: Partial<Drop>;
@@ -19,6 +21,7 @@ export default function DropForm({ initialData, onSubmit, onCancel }: DropFormPr
     starts_at: initialData?.starts_at ? new Date(initialData.starts_at).toISOString().slice(0, 16) : "",
     ends_at: initialData?.ends_at ? new Date(initialData.ends_at).toISOString().slice(0, 16) : "",
   });
+  const [isAiLoading, setIsAiLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +36,23 @@ export default function DropForm({ initialData, onSubmit, onCancel }: DropFormPr
       await onSubmit(payload as any); // Cast to any to avoid strict Partial<Drop> type issues for now
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGenerateDescription = async () => {
+    if (!formData.name) {
+      toast.error("Please enter a Drop Name first.");
+      return;
+    }
+    setIsAiLoading(true);
+    try {
+      const res = await aiService.generateDescription(formData.name);
+      setFormData({ ...formData, description: res.description });
+      toast.success("Description generated!");
+    } catch (error: any) {
+      toast.error(error.message || "AI generation failed");
+    } finally {
+      setIsAiLoading(false);
     }
   };
 
@@ -61,10 +81,21 @@ export default function DropForm({ initialData, onSubmit, onCancel }: DropFormPr
           </select>
         </div>
         <div className="col-span-2">
-          <label className="block text-sm font-medium mb-1">Description</label>
+          <div className="flex justify-between items-center mb-1">
+            <label className="block text-sm font-medium">Description</label>
+            <button
+              type="button"
+              onClick={handleGenerateDescription}
+              disabled={isAiLoading}
+              className="flex items-center gap-1.5 px-2 py-1 text-xs font-semibold text-purple-700 bg-purple-100 rounded-md hover:bg-purple-200 disabled:opacity-50">
+              {isAiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              Generate with AI
+            </button>
+          </div>
           <textarea
             className="w-full p-2 border rounded"
             rows={3}
+            placeholder="Click 'Generate with AI' or type here..."
             value={formData.description}
             onChange={e => setFormData({ ...formData, description: e.target.value })}
           />

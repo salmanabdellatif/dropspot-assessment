@@ -58,7 +58,7 @@ The Admin Dashboard (`/admin`) allows authorized users (is_admin=true) to create
 ```bash
 cd backend
 npm install
-# Create .env file and add DATABASE_URL and JWT_SECRET
+# Create .env file and add DATABASE_URL, PORT, JWT_SECRET and OPENAI_API_KEY
 node setupDb.js
 npm run dev
 ```
