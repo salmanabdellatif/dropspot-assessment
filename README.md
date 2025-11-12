@@ -109,7 +109,7 @@ A = 7  + (int(seed[0:2],16) % 5)
 B = 13 + (int(seed[2:4],16) % 7)
 C = 3  + (int(seed[4:6],16) % 3)
 
-/*These coefficients were then used in the priority_score formula as specified in the document, creating a fair and deterministic score for ranking users on the waitlist.*/
+/*These coefficients were then used in the priority_score formula as specified in the document, creating a fair and deterministic score for ranking users on the waitlist*/
 
 priority_score = base + (signup_latency_ms % A) + (account_age_days % B) - (rapid_actions % C)
 ```
