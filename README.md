@@ -1,3 +1,10 @@
+### 🚀 Live Demo Links
+
+- **Frontend (Netlify):** [https://dropspot-assessment.netlify.app/](https://dropspot-assessment.netlify.app/)
+- **Backend (Render):** [https://dropspot-assessment.onrender.com](https://dropspot-assessment.onrender.com)
+
+---
+
 # DropSpot - Alpaco Full Stack Case
 
 _Project Start Time:_ **202511100109**
