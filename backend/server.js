@@ -6,6 +6,7 @@ const db = require("./db");
 const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const dropRoutes = require("./routes/dropRoutes");
+const aiRoutes = require("./routes/aiRoutes");
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.use(express.json());
 app.use("/auth", authRoutes);
 app.use("/admin", adminRoutes);
 app.use("/drops", dropRoutes);
+app.use("/admin/ai", aiRoutes);
 
 // Health Check Route
 app.get("/", async (req, res) => {
